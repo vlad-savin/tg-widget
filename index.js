@@ -7,7 +7,7 @@ const app = express();
 
 app.use(cors());
 
-// кеш (1 минута)
+// кеш
 let cache = {};
 let lastFetch = 0;
 
@@ -24,11 +24,22 @@ app.get("/channel/:name", async (req, res) => {
 
     const $ = cheerio.load(data);
 
+    // 🔥 НАЗВАНИЕ КАНАЛА
+    const title =
+      $(".tgme_channel_info_header_title").text().trim() || name;
+
+    // 🔥 АВАТАР
+    const avatar = $(".tgme_page_photo_image").attr("src") || null;
+
     const posts = [];
 
-    $(".tgme_widget_message_wrap").each((i, el) => {
-      if (i >= 5) return;
+    // 🔥 БЕРЕМ ПОСЛЕДНИЕ 5
+    const items = $(".tgme_widget_message_wrap")
+      .toArray()
+      .slice(-5)
+      .reverse();
 
+    items.forEach((el) => {
       const text = $(el)
         .find(".tgme_widget_message_text")
         .text()
@@ -43,38 +54,35 @@ app.get("/channel/:name", async (req, res) => {
         .find("time")
         .attr("datetime");
 
-      const img = $(el).find("img").attr("src");
+      const image = $(el).find("img").attr("src");
 
       posts.push({
         text,
         views,
         time,
-        image: img || null
+        image: image || null,
       });
     });
 
     const result = {
-      title: name,
-      subscribers: "—",
-      last_post: "recent",
-      posts
+      title,
+      avatar,
+      posts,
     };
 
     cache[name] = result;
     lastFetch = Date.now();
 
     res.json(result);
-
   } catch (e) {
     console.error("ERROR:", e.message);
     res.status(500).json({ error: "failed to fetch" });
   }
 });
 
-// 🔥 ВАЖНО ДЛЯ RAILWAY
+// 🔥 важно для Railway
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("🚀 Server running on port", PORT);
 });
-
