@@ -71,7 +71,10 @@ app.get("/channel/:name", async (req, res) => {
   }
 });
 
-// 🔥 ВАЖНО: слушаем на всех интерфейсах
-app.listen(3000, "0.0.0.0", () => {
-  console.log("🚀 Server running on http://0.0.0.0:3000");
+// 🔥 ВАЖНО ДЛЯ RAILWAY
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("🚀 Server running on port " + PORT);
 });
+
